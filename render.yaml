@@ -5,5 +5,8 @@ services:
     pythonVersion: 3.11.9
     plan: free
     region: oregon
-    buildCommand: pip install -r requirements.txt
+    buildCommand: CARGO_HOME=/tmp/.cargo pip install -r requirements.txt
     startCommand: python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9

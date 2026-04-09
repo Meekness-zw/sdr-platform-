@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SDR Intelligence Platform</title>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  :root {
+    --bg: #f1f5f9;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --border2: #edf2f7;
+    --navy: #0f2444;
+    --navy2: #1a3a5c;
+    --blue: #1d6fd4;
+    --blue-light: #e8f0fc;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --amber: #b45309;
+    --amber-light: #fefce8;
+    --green: #15803d;
+    --green-light: #f0fdf4;
+    --violet: #6d28d9;
+    --violet-light: #f5f3ff;
+    --teal: #0f766e;
+    --teal-light: #f0fdfa;
+    --slate: #64748b;
+    --slate2: #94a3b8;
+    --text: #0f172a;
+    --text2: #334155;
+    --muted: #64748b;
+    --radius: 8px;
+    --sidebar-w: 288px;
+    --header-h: 58px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.07);
+    --shadow-lg: 0 12px 24px rgba(0,0,0,0.1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; font-size: 14px; min-height: 100vh; }
+
+  .layout { display: grid; grid-template-rows: var(--header-h) 1fr; grid-template-columns: 1fr var(--sidebar-w); min-height: 100vh; }
+  .header { grid-column: 1 / -1; background: var(--navy); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); position: sticky; top: 0; z-index: 100; }
+  .main { padding: 28px; overflow-y: auto; min-width: 0; }
+  .sidebar { background: var(--surface); border-left: 1px solid var(--border); padding: 20px 16px; overflow-y: auto; }
+
+  .logo-group { display: flex; align-items: center; gap: 12px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #1d6fd4, #0ea5e9); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-icon svg { color: #fff; }
+  .logo-name { color: #fff; font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+  .logo-tag { color: #94a3b8; font-size: 11px; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .status-chip { display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 5px 14px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.25); flex-shrink: 0; }
+  .status-dot.running { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.25); animation: blink 1s ease-in-out infinite; }
+  .status-text { color: #cbd5e1; font-size: 12px; font-weight: 500; }
+  .header-btn { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .header-btn:hover { background: rgba(255,255,255,0.18); }
+  .avatar { width: 30px; height: 30px; background: var(--blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+
+  /* Page nav */
+  .page-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .page-title { font-size: 19px; font-weight: 700; color: var(--navy); letter-spacing: -0.4px; display: flex; align-items: center; gap: 8px; }
+  .page-title svg { color: var(--blue); }
+  .view-tabs { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); padding: 3px; border-radius: 8px; box-shadow: var(--shadow); }
+  .view-tab { border: none; background: none; padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .view-tab.active { background: var(--navy); color: #fff; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 14px; }
+  .stat-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .si-total { background: var(--blue-light); color: var(--blue); }
+  .si-hot { background: var(--red-light); color: var(--red); }
+  .si-warm { background: var(--amber-light); color: var(--amber); }
+  .si-avg { background: var(--green-light); color: var(--green); }
+  .si-open { background: var(--teal-light); color: var(--teal); }
+  .si-reply { background: var(--violet-light); color: var(--violet); }
+  .si-pos { background: var(--green-light); color: var(--green); }
+  .si-li { background: var(--blue-light); color: var(--blue); }
+  .stat-body { flex: 1; min-width: 0; }
+  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 5px; }
+  .stat-value { font-size: 26px; font-weight: 800; letter-spacing: -1px; color: var(--navy); line-height: 1; }
+  .stat-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 22px; }
+  .card-head { padding: 14px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 10px; }
+  .card-head-icon { color: var(--blue); display: flex; align-items: center; }
+  .card-head-title { font-weight: 700; font-size: 13px; color: var(--navy); }
+  .card-head-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .card-head-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .card-body { padding: 18px 20px; }
+
+  /* Upload */
+  .drop-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 28px 20px; text-align: center; cursor: pointer; position: relative; transition: all 0.2s; background: var(--surface2); }
+  .drop-zone:hover, .drop-zone.drag { border-color: var(--blue); background: var(--blue-light); }
+  .drop-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { width: 40px; height: 40px; background: var(--blue-light); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; color: var(--blue); }
+  .drop-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+  .drop-sub { font-size: 12px; color: var(--muted); }
+  .upload-btn { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; background: var(--blue); color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: background 0.15s; }
+  .upload-btn:hover { background: #1558b0; }
+  .prog-wrap { margin-top: 14px; display: none; }
+  .prog-wrap.show { display: block; }
+  .prog-track { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; }
+  .prog-fill { height: 100%; background: linear-gradient(90deg, var(--blue), #0ea5e9); border-radius: 4px; width: 0%; transition: width 0.4s ease; }
+  .prog-msg { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  /* Table */
+  .table-toolbar { padding: 12px 20px; border-bottom: 1px solid var(--border2); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .table-heading { font-weight: 700; font-size: 13px; color: var(--navy); margin-right: auto; display: flex; align-items: center; gap: 7px; }
+  .table-heading svg { color: var(--blue); }
+  .tab-bar { display: flex; gap: 2px; background: var(--bg); border: 1px solid var(--border); padding: 3px; border-radius: 7px; }
+  .tab { border: none; background: none; padding: 5px 12px; border-radius: 5px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .tab.active { background: var(--surface); color: var(--navy); box-shadow: var(--shadow); }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--slate2); pointer-events: none; }
+  .search-input { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 7px 12px 7px 32px; font-size: 13px; color: var(--text); outline: none; width: 220px; transition: border-color 0.15s; }
+  .search-input:focus { border-color: var(--blue); }
+  .search-input::placeholder { color: var(--slate2); }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); background: var(--surface2); border-bottom: 1px solid var(--border); white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid var(--border2); cursor: pointer; transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #f8fafd; }
+  tbody tr.selected { background: var(--blue-light) !important; }
+  td { padding: 11px 16px; vertical-align: middle; }
+  .name-primary { font-weight: 600; color: var(--navy); font-size: 13px; }
+  .name-email { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .score-cell { display: flex; align-items: center; gap: 8px; }
+  .score-num { font-weight: 700; font-size: 13px; width: 28px; }
+  .score-bar { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; min-width: 48px; }
+  .score-fill { height: 100%; border-radius: 3px; }
+  .empty-state { text-align: center; padding: 52px; color: var(--muted); }
+  .empty-state svg { margin: 0 auto 10px; display: block; color: var(--slate2); }
+  .empty-state p { font-size: 13px; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; }
+  .b-hot { background: var(--red-light); color: var(--red); border: 1px solid #fecaca; }
+  .b-warm { background: var(--amber-light); color: var(--amber); border: 1px solid #fde68a; }
+  .b-cool { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .b-disq { background: var(--surface2); color: var(--slate); border: 1px solid var(--border); }
+  .b-enrolled { background: var(--green-light); color: var(--green); border: 1px solid #bbf7d0; }
+  .b-persona { background: var(--violet-light); color: var(--violet); border: 1px solid #ddd6fe; }
+  .b-sent { background: var(--teal-light); color: var(--teal); border: 1px solid #99f6e4; }
+  .b-pending { background: var(--amber-light); color: var(--amber); border: 1px solid #fde68a; }
+
+  /* Panel */
+  .overlay { position: fixed; inset: 0; background: rgba(15,36,68,0.35); z-index: 200; display: none; backdrop-filter: blur(2px); }
+  .overlay.open { display: block; }
+  .panel { position: fixed; top: 0; right: 0; bottom: 0; width: 580px; background: var(--surface); border-left: 1px solid var(--border); z-index: 201; transform: translateX(100%); transition: transform 0.26s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+  .panel.open { transform: translateX(0); }
+  .panel-head { padding: 18px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-shrink: 0; background: var(--navy); }
+  .panel-name { font-size: 16px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .panel-sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+  .panel-tabs { display: flex; gap: 1px; padding: 10px 24px 0; background: var(--navy); flex-shrink: 0; }
+  .panel-tab { border: none; background: rgba(255,255,255,0.06); color: #94a3b8; padding: 7px 14px; border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+  .panel-tab.active { background: var(--surface); color: var(--navy); }
+  .panel-close { background: rgba(255,255,255,0.1); border: none; color: #94a3b8; cursor: pointer; border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .panel-close:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  .panel-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .panel-section { display: none; }
+  .panel-section.active { display: block; }
+
+  .section { margin-bottom: 22px; }
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .section-label svg { color: var(--blue); }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border2); margin-left: 4px; }
+
+  .scores-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 12px; }
+  .score-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; text-align: center; }
+  .score-box .val { font-size: 22px; font-weight: 800; color: var(--navy); letter-spacing: -0.5px; }
+  .score-box .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); margin-top: 2px; font-weight: 600; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .info-item { background: var(--surface2); border: 1px solid var(--border2); border-radius: 6px; padding: 10px 12px; }
+  .info-item .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 3px; }
+  .info-item .val { font-size: 13px; font-weight: 500; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .opener-box { background: var(--surface2); border: 1px solid var(--border); border-left: 3px solid var(--blue); border-radius: 6px; padding: 14px; font-size: 13px; line-height: 1.65; color: var(--text2); min-height: 60px; }
+  .opener-box.is-empty { color: var(--muted); font-style: italic; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; transition: all 0.15s; letter-spacing: 0.2px; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: #1558b0; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text2); }
+  .btn-secondary:hover { background: var(--surface2); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { background: #166534; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 3px 10px; font-size: 11px; color: var(--slate); font-weight: 500; display: flex; align-items: center; gap: 4px; }
+  .tag svg { color: var(--amber); }
+
+  .act-list { display: flex; flex-direction: column; }
+  .act-item { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--border2); }
+  .act-item:last-child { border-bottom: none; }
+  .act-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); border: 2px solid var(--blue-light); margin-top: 4px; flex-shrink: 0; }
+  .act-body { flex: 1; min-width: 0; }
+  .act-event { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .act-detail { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .act-time { font-size: 11px; color: var(--slate2); white-space: nowrap; }
+
+  /* Sequence timeline */
+  .touch-list { display: flex; flex-direction: column; gap: 8px; }
+  .touch-item { display: flex; align-items: center; gap: 12px; background: var(--surface2); border: 1px solid var(--border2); border-radius: 7px; padding: 10px 14px; }
+  .touch-day { font-size: 11px; font-weight: 700; color: var(--muted); width: 36px; flex-shrink: 0; }
+  .touch-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .touch-icon.email { background: var(--blue-light); color: var(--blue); }
+  .touch-icon.linkedin { background: #e0f2fe; color: #0369a1; }
+  .touch-body { flex: 1; min-width: 0; }
+  .touch-subject { font-size: 12px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .touch-date { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .touch-status { margin-left: auto; flex-shrink: 0; }
+
+  /* MEDDIC */
+  .meddic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .meddic-item label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-bottom: 5px; }
+  .toggle-row { display: flex; gap: 6px; }
+  .toggle-btn { flex: 1; padding: 6px 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 5px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center; }
+  .toggle-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .meddic-notes { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--text); background: var(--surface); resize: vertical; min-height: 72px; font-family: inherit; outline: none; }
+  .meddic-notes:focus { border-color: var(--blue); }
+  .meddic-total { text-align: center; background: var(--navy); color: #fff; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+  .meddic-total .big { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  .meddic-total .sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .meddic-handoff { background: var(--green-light); border: 1px solid #bbf7d0; border-radius: 7px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 12px; }
+
+  /* LinkedIn queue */
+  .li-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+  .li-card:last-child { margin-bottom: 0; }
+  .li-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--blue-light); color: var(--blue); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .li-body { flex: 1; min-width: 0; }
+  .li-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+  .li-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .li-copy { font-size: 12px; color: var(--text2); background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid #0369a1; border-radius: 4px; padding: 8px 10px; margin-top: 8px; line-height: 1.5; }
+  .li-actions { display: flex; gap: 7px; margin-top: 10px; }
+  .li-empty { text-align: center; padding: 48px; color: var(--muted); }
+  .li-empty svg { margin: 0 auto 10px; display: block; color: var(--slate2); }
+
+  /* KPI / Analytics */
+  .kpi-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; box-shadow: var(--shadow); }
+  .kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--muted); margin-bottom: 6px; }
+  .kpi-val { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; color: var(--navy); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .ab-table { width: 100%; border-collapse: collapse; }
+  .ab-table thead th { padding: 9px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); background: var(--surface2); border-bottom: 1px solid var(--border); text-align: left; }
+  .ab-table tbody td { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--border2); }
+  .ab-table tbody tr:last-child td { border-bottom: none; }
+  .rate-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 3px; overflow: hidden; }
+  .rate-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.5s; }
+
+  /* Sidebar */
+  .sidebar-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+  .sidebar-head svg { color: var(--blue); }
+  .feed-list { display: flex; flex-direction: column; }
+  .feed-item { padding: 10px 8px; border-radius: 6px; border-bottom: 1px solid var(--border2); transition: background 0.1s; }
+  .feed-item:last-child { border-bottom: none; }
+  .feed-item:hover { background: var(--surface2); }
+  .feed-name { font-size: 12px; font-weight: 600; color: var(--navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-event { font-size: 11px; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-time { font-size: 10px; color: var(--slate2); margin-top: 2px; }
+  .feed-empty { text-align: center; padding: 32px 0; color: var(--muted); font-size: 12px; }
+  .feed-empty svg { margin: 0 auto 8px; display: block; color: var(--slate2); }
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* Utils */
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.65s linear infinite; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .hidden { display: none !important; }
+
+  /* ── Tablet (≤1100px) ─────────────────────────────────────────── */
+  @media (max-width: 1100px) {
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .kpi-row { grid-template-columns: repeat(2,1fr); }
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .panel { width: 92%; }
+  }
+
+  /* ── Mobile (≤680px) ──────────────────────────────────────────── */
+  @media (max-width: 680px) {
+    :root { --header-h: 52px; }
+
+    /* Header */
+    .header { padding: 0 16px; gap: 10px; }
+    .logo-tag { display: none; }
+    .header-btn span { display: none; }          /* icon-only buttons */
+    .header-btn { padding: 6px 9px; }
+    .status-chip { display: none; }              /* hide on mobile */
+
+    /* Main */
+    .main { padding: 16px; }
+
+    /* Stats 1-column */
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .stat-card { padding: 14px 14px; }
+    .stat-icon { width: 36px; height: 36px; border-radius: 8px; }
+    .stat-value { font-size: 22px; }
+
+    /* View tabs scroll */
+    .page-nav { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .view-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .view-tab { padding: 7px 12px; font-size: 11px; white-space: nowrap; }
+
+    /* Upload card */
+    .card-body { padding: 14px; }
+    .drop-zone { padding: 20px 14px; }
+
+    /* Table: make horizontally scrollable */
+    .card { overflow-x: auto; }
+    table { min-width: 560px; }
+    .table-toolbar { flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 14px; }
+    .table-heading { width: 100%; }
+    .tab-bar { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .search-input { width: 100%; }
+    .search-wrap { width: 100%; }
+
+    /* Full-width panel on mobile */
+    .panel { width: 100%; border-left: none; }
+    .panel-body { padding: 16px; }
+    .panel-tabs { padding: 8px 16px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .panel-tab { font-size: 11px; padding: 6px 12px; white-space: nowrap; }
+
+    /* Scores 3-col stays, info-grid 1-col */
+    .info-grid { grid-template-columns: 1fr; }
+    .meddic-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* LinkedIn cards */
+    .li-card { flex-direction: column; }
+    .li-avatar { width: 30px; height: 30px; font-size: 12px; }
+  }
+
+  /* ── Very small phones (≤380px) ───────────────────────────────── */
+  @media (max-width: 380px) {
+    .stats-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: 1fr; }
+    .scores-row { grid-template-columns: repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-group">
+      <div class="logo-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">SDR Intelligence Platform</div>
+        <div class="logo-tag">Automated Pipeline Management</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" onclick="triggerSendTouches()" title="Send all due sequence emails now">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Send Touches
+      </button>
+      <button class="header-btn" onclick="triggerCheckReplies()" title="Poll Gmail for new replies now">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+        Check Replies
+      </button>
+      <div class="status-chip">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">System Ready</span>
+      </div>
+      <div class="avatar">S</div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- View switcher -->
+    <div class="page-nav">
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Pipeline Overview
+      </div>
+      <div class="view-tabs" id="viewTabs">
+        <button class="view-tab active" data-view="prospects">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Prospects
+        </button>
+        <button class="view-tab" data-view="linkedin">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          LinkedIn Queue <span id="liCount" class="badge b-warm hidden" style="margin-left:2px;font-size:10px;"></span>
+        </button>
+        <button class="view-tab" data-view="analytics">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          KPI Analytics
+        </button>
+      </div>
+    </div>
+
+    <!-- PROSPECTS VIEW -->
+    <div id="viewProspects">
+
+      <!-- Pipeline stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon si-total"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="stat-body"><div class="stat-label">Total Prospects</div><div class="stat-value" id="statTotal">—</div><div class="stat-hint">In pipeline database</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-hot"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+          <div class="stat-body"><div class="stat-label">HOT Leads</div><div class="stat-value" id="statHot">—</div><div class="stat-hint">Score 70 – 100</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-warm"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.56 2.9A7 7 0 0 1 19 9v4"/><path d="M3 21h12"/><path d="M8 21V9"/></svg></div>
+          <div class="stat-body"><div class="stat-label">WARM Leads</div><div class="stat-value" id="statWarm">—</div><div class="stat-hint">Score 45 – 69</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-avg"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div class="stat-body"><div class="stat-label">Avg. Score</div><div class="stat-value" id="statAvg">—</div><div class="stat-hint">Qualified prospects only</div></div>
+        </div>
+      </div>
+
+      <!-- Upload -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div>
+            <div class="card-head-title">Import Apollo CSV</div>
+            <div class="card-head-sub">Upload your exported contact list to run the full scoring and outreach pipeline</div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" accept=".csv" id="csvInput" />
+            <div class="drop-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            <div class="drop-title">Drag and drop your Apollo CSV export here</div>
+            <div class="drop-sub">Supports Apollo People Search exports — or click to browse</div>
+            <button class="upload-btn"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Select File</button>
+          </div>
+          <div class="prog-wrap" id="progWrap">
+            <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+            <div class="prog-msg" id="progMsg">Initialising pipeline...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prospects Table -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="table-toolbar">
+          <div class="table-heading">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Prospect Intelligence
+          </div>
+          <div class="tab-bar" id="tabBar">
+            <button class="tab active" data-tier="all">All</button>
+            <button class="tab" data-tier="tier_1_hot">HOT</button>
+            <button class="tab" data-tier="tier_2_warm">WARM</button>
+            <button class="tab" data-tier="tier_3_cool">COOL</button>
+            <button class="tab" data-tier="disqualified">Disqualified</button>
+          </div>
+          <div class="search-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search prospects..." />
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Contact</th><th>Title</th><th>Company</th><th>Score</th><th>Tier</th><th>Persona</th><th>Status</th></tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="7"><div class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <p>Loading prospects...</p>
+            </div></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /viewProspects -->
+
+    <!-- LINKEDIN VIEW -->
+    <div id="viewLinkedin" class="hidden">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-head">
+          <div class="card-head-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></div>
+          <div>
+            <div class="card-head-title">LinkedIn Touch Queue</div>
+            <div class="card-head-sub">Copy and send each message manually on LinkedIn, then mark as sent</div>
+          </div>
+          <div class="card-head-right">
+            <button class="btn btn-secondary" style="font-size:11px;padding:6px 12px;" onclick="loadLinkedIn()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="linkedinList">
+            <div class="li-empty">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <p>Loading LinkedIn queue...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS VIEW -->
+    <div id="viewAnalytics" class="hidden">
+
+      <!-- Email KPIs -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <div><div class="card-head-title">Email Performance</div><div class="card-head-sub">Sent, opened, replied — tracked via Gmail SMTP + IMAP</div></div>
+        </div>
+        <div class="card-body">
+          <div class="kpi-row">
+            <div class="kpi-card"><div class="kpi-label">Emails Sent</div><div class="kpi-val" id="kpiSent">—</div><div class="kpi-sub">Total dispatched</div></div>
+            <div class="kpi-card"><div class="kpi-label">Open Rate</div><div class="kpi-val" id="kpiOpenRate">—</div><div class="kpi-sub" id="kpiOpened">— opens tracked</div></div>
+            <div class="kpi-card"><div class="kpi-label">Reply Rate</div><div class="kpi-val" id="kpiReplyRate">—</div><div class="kpi-sub" id="kpiReplies">— total replies</div></div>
+            <div class="kpi-card"><div class="kpi-label">Positive Rate</div><div class="kpi-val" id="kpiPosRate">—</div><div class="kpi-sub" id="kpiPos">— positive replies</div></div>
+          </div>
+          <div class="kpi-row" style="grid-template-columns: repeat(2,1fr); margin-bottom:0;">
+            <div class="kpi-card"><div class="kpi-label">LinkedIn Touches Sent</div><div class="kpi-val" id="kpiLi">—</div><div class="kpi-sub">Connections + DMs marked sent</div></div>
+            <div class="kpi-card"><div class="kpi-label">Calls Booked</div><div class="kpi-val" id="kpiCalls">—</div><div class="kpi-sub">Positive replies (proxy)</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A/B Performance -->
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-head">
+          <div class="card-head-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+          <div><div class="card-head-title">Sequence Performance by Touch</div><div class="card-head-sub">Open and reply rates per persona and day</div></div>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <table class="ab-table">
+            <thead>
+              <tr><th>Persona</th><th>Day</th><th>Variant</th><th>Sent</th><th>Opens</th><th>Replies</th><th>Open %</th><th>Reply %</th></tr>
+            </thead>
+            <tbody id="abBody">
+              <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);">Loading analytics...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /viewAnalytics -->
+
+  </main>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activity Feed
+    </div>
+    <div id="feedList">
+      <div class="feed-empty">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12 19.79 19.79 0 0 1 1.15 3.18 2 2 0 0 1 3.12 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z"/></svg>
+        No activity yet
+      </div>
+    </div>
+    <hr class="sidebar-divider" />
+    <div class="sidebar-head">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Pipeline Health
+    </div>
+    <div id="sideHealth" style="font-size:12px;color:var(--muted);">Loading...</div>
+  </aside>
+
+</div>
+
+<!-- Overlay & Detail Panel -->
+<div class="overlay" id="overlay"></div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <div>
+      <div class="panel-name" id="panelName">—</div>
+      <div class="panel-sub" id="panelSub">—</div>
+    </div>
+    <button class="panel-close" id="panelClose">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="panel-tabs" id="panelTabs">
+    <button class="panel-tab active" data-tab="overview">Overview</button>
+    <button class="panel-tab" data-tab="sequence">Sequence</button>
+    <button class="panel-tab" data-tab="meddic">MEDDIC</button>
+  </div>
+  <div class="panel-body">
+
+    <!-- Overview tab -->
+    <div class="panel-section active" id="tabOverview">
+      <div class="section">
+        <div class="section-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Scoring Breakdown
+        </div>
+        <div class="scores-row">
+          <div class="score-box"><div class="val" id="pComposite">—</div><div class="lbl">Composite</div></div>
+          <div class="score-box"><div class="val" id="pFirmo">—</div><div class="lbl">Firmographic</div></div>
+          <div class="score-box"><div class="val" id="pIntent">—</div><div class="lbl">Intent</div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <span id="pTierBadge" class="badge">—</span>
+          <span id="pPersonaBadge" class="badge b-persona">—</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          Company Profile
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><div class="lbl">Company</div><div class="val" id="pCompany">—</div></div>
+          <div class="info-item"><div class="lbl">Industry</div><div class="val" id="pIndustry">—</div></div>
+          <div class="info-item"><div class="lbl">Headcount</div><div class="val" id="pHeadcount">—</div></div>
+          <div class="info-item"><div class="lbl">Funding Stage</div><div class="val" id="pFunding">—</div></div>
+          <div class="info-item"><div class="lbl">Email</div><div class="val" id="pEmail">—</div></div>
+          <div class="info-item"><div class="lbl">LinkedIn</div><div class="val" id="pLinkedin">—</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Trigger Events
+        </div>
+        <div class="tags" id="pTriggers"><span class="tag">No triggers detected</span></div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          AI Personalised Opener
+        </div>
+        <div class="opener-box is-empty" id="pOpener">No opener generated yet.</div>
+        <button class="btn btn-primary" style="margin-top:10px;" id="regenBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span id="regenLabel">Generate Opener</span>
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Activity Log
+        </div>
+        <div class="act-list" id="pActivity">
+          <div style="color:var(--muted);font-size:12px;padding:8px 0;">No activity recorded.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sequence tab -->
+    <div class="panel-section" id="tabSequence">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);">Multi-touch sequence plan</div>
+        <button class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" id="enrollBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Enroll
+        </button>
+      </div>
+      <div class="touch-list" id="touchList">
+        <div style="color:var(--muted);font-size:12px;text-align:center;padding:32px;">No sequence touches found.</div>
+      </div>
+    </div>
+
+    <!-- MEDDIC tab -->
+    <div class="panel-section" id="tabMeddic">
+      <div class="meddic-total">
+        <div class="big"><span id="meddicTotal">0</span><span style="font-size:14px;color:#94a3b8;">/6</span></div>
+        <div class="sub">MEDDIC Discovery Score</div>
+      </div>
+      <div id="meddicHandoff" class="meddic-handoff hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Ready for sales handoff (score 4 of 6)
+      </div>
+      <div class="meddic-grid">
+        <div class="meddic-item">
+          <label>Metrics (ROI defined?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="metrics_score" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="metrics_score" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+        <div class="meddic-item">
+          <label>Economic Buyer (identified?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="economic_buyer" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="economic_buyer" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+        <div class="meddic-item">
+          <label>Decision Criteria (known?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="decision_criteria" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="decision_criteria" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+        <div class="meddic-item">
+          <label>Decision Process (mapped?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="decision_process" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="decision_process" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+        <div class="meddic-item">
+          <label>Identify Pain (confirmed?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="identify_pain" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="identify_pain" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+        <div class="meddic-item">
+          <label>Champion (internal sponsor?)</label>
+          <div class="toggle-row"><button class="toggle-btn" data-field="champion" data-val="0" onclick="meddicToggle(this)">No</button><button class="toggle-btn" data-field="champion" data-val="1" onclick="meddicToggle(this)">Yes</button></div>
+        </div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);display:block;margin-bottom:6px;">Discovery Call Notes</label>
+        <textarea class="meddic-notes" id="meddicNotes" placeholder="Key insights from the discovery call..."></textarea>
+      </div>
+      <button class="btn btn-success" style="width:100%;" id="saveMeddicBtn" onclick="saveMeddic()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save MEDDIC Score
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let activeTier = 'all', searchQuery = '', selectedId = null, pollTimer = null, activeView = 'prospects';
+const meddicState = { metrics_score:0, economic_buyer:0, decision_criteria:0, decision_process:0, identify_pain:0, champion:0 };
+
+async function get(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+async function post(url, body, isJson = true) {
+  const opts = isJson
+    ? { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) }
+    : { method:'POST', body };
+  const r = await fetch(url, opts);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+// ── View switching ─────────────────────────────────────────────────────────────
+
+document.getElementById('viewTabs').addEventListener('click', e => {
+  const t = e.target.closest('.view-tab'); if (!t) return;
+  document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  activeView = t.dataset.view;
+  document.getElementById('viewProspects').classList.toggle('hidden', activeView !== 'prospects');
+  document.getElementById('viewLinkedin').classList.toggle('hidden', activeView !== 'linkedin');
+  document.getElementById('viewAnalytics').classList.toggle('hidden', activeView !== 'analytics');
+  if (activeView === 'linkedin') loadLinkedIn();
+  if (activeView === 'analytics') loadAnalytics();
+});
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
+
+async function loadStats() {
+  try {
+    const s = await get('/api/stats');
+    document.getElementById('statTotal').textContent = s.total;
+    document.getElementById('statHot').textContent = s.hot;
+    document.getElementById('statWarm').textContent = s.warm;
+    document.getElementById('statAvg').textContent = s.avg_score || '—';
+    document.getElementById('sideHealth').innerHTML =
+      `<div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;"><span>Enrolled</span><strong>${s.enrolled}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;"><span>Positive Replies</span><strong style="color:var(--green)">${s.positive_replies}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;"><span>COOL Prospects</span><strong>${s.cool}</strong></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;"><span>Disqualified</span><strong style="color:var(--muted)">${s.disqualified}</strong></div>
+      </div>`;
+  } catch(e) {}
+}
+
+// ── Prospects table ────────────────────────────────────────────────────────────
+
+async function loadTable() {
+  const p = new URLSearchParams();
+  if (activeTier !== 'all') p.set('tier', activeTier);
+  if (searchQuery) p.set('search', searchQuery);
+  try { renderTable(await get(`/api/prospects?${p}`)); } catch(e) {}
+}
+
+function tierInfo(t) {
+  if (t === 'tier_1_hot')  return { cls:'b-hot',  label:'HOT' };
+  if (t === 'tier_2_warm') return { cls:'b-warm', label:'WARM' };
+  if (t === 'tier_3_cool') return { cls:'b-cool', label:'COOL' };
+  return { cls:'b-disq', label:'Disqualified' };
+}
+function scoreColor(n) {
+  if (n >= 70) return '#dc2626';
+  if (n >= 45) return '#b45309';
+  if (n >= 25) return '#1d4ed8';
+  return '#94a3b8';
+}
+function statusCell(s) {
+  if (s === 'enrolled')                return `<span class="badge b-enrolled">Enrolled</span>`;
+  if (s === 'positive_reply')          return `<span class="badge b-hot">Positive Reply</span>`;
+  if (s === 'replied')                 return `<span class="badge b-cool">Replied</span>`;
+  if (s === 'qualified_for_handoff')   return `<span class="badge b-sent">Handoff Ready</span>`;
+  return `<span class="badge b-disq">Not Enrolled</span>`;
+}
+
+function renderTable(rows) {
+  const tb = document.getElementById('tableBody');
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <p>No prospects match your filter</p></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = rows.map(p => {
+    const { cls, label } = tierInfo(p.tier);
+    const sc = p.composite_score || 0;
+    const col = scoreColor(sc);
+    return `<tr class="${p.id === selectedId ? 'selected' : ''}" data-id="${p.id}">
+      <td><div class="name-primary">${p.first_name||''} ${p.last_name||''}</div><div class="name-email">${p.email||'—'}</div></td>
+      <td style="color:var(--muted);font-size:13px;">${p.job_title||'—'}</td>
+      <td style="font-size:13px;font-weight:500;">${p.company_name||'—'}</td>
+      <td><div class="score-cell">
+        <span class="score-num" style="color:${col}">${sc}</span>
+        <div class="score-bar"><div class="score-fill" style="width:${Math.min(sc,100)}%;background:${col}"></div></div>
+      </div></td>
+      <td><span class="badge ${cls}">${label}</span></td>
+      <td><span class="badge b-persona">${p.persona||'—'}</span></td>
+      <td>${statusCell(p.sequence_status)}</td>
+    </tr>`;
+  }).join('');
+  tb.querySelectorAll('tr[data-id]').forEach(r => r.addEventListener('click', () => openPanel(+r.dataset.id)));
+}
+
+// ── Prospect detail panel ──────────────────────────────────────────────────────
+
+async function openPanel(id) {
+  selectedId = id;
+  document.querySelectorAll('tr[data-id]').forEach(r => r.classList.toggle('selected', +r.dataset.id === id));
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('panel').classList.add('open');
+  switchPanelTab('overview');
+  try {
+    const p = await get(`/api/prospects/${id}`);
+    document.getElementById('panelName').textContent = `${p.first_name||''} ${p.last_name||''}`;
+    document.getElementById('panelSub').textContent = `${p.job_title||'—'} · ${p.company_name||'—'}`;
+    document.getElementById('pComposite').textContent = p.composite_score||0;
+    document.getElementById('pFirmo').textContent = p.firmographic_score||0;
+    document.getElementById('pIntent').textContent = p.intent_score||0;
+    document.getElementById('pCompany').textContent = p.company_name||'—';
+    document.getElementById('pIndustry').textContent = p.industry||'—';
+    document.getElementById('pHeadcount').textContent = p.headcount ? `${p.headcount.toLocaleString()} employees` : '—';
+    document.getElementById('pFunding').textContent = (p.funding_stage||'Unknown').replace(/_/g,' ');
+    document.getElementById('pEmail').innerHTML = p.email ? `<a href="mailto:${p.email}">${p.email}</a>` : '—';
+    document.getElementById('pLinkedin').innerHTML = p.linkedin_url ? `<a href="${p.linkedin_url}" target="_blank">View Profile</a>` : '—';
+    const { cls, label } = tierInfo(p.tier);
+    const tb2 = document.getElementById('pTierBadge');
+    tb2.textContent = label; tb2.className = `badge ${cls}`;
+    document.getElementById('pPersonaBadge').textContent = p.persona||'Unknown';
+    const trigs = p.triggers ? p.triggers.split(',').map(t=>t.trim()).filter(Boolean) : [];
+    document.getElementById('pTriggers').innerHTML = trigs.length
+      ? trigs.map(t=>`<span class="tag"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>${t.replace(/_/g,' ')}</span>`).join('')
+      : '<span class="tag">No triggers detected</span>';
+    const op = document.getElementById('pOpener');
+    if (p.personal_opener) { op.textContent = p.personal_opener; op.classList.remove('is-empty'); document.getElementById('regenLabel').textContent = 'Regenerate Opener'; }
+    else { op.textContent = 'No opener generated yet. Click below to generate one.'; op.classList.add('is-empty'); document.getElementById('regenLabel').textContent = 'Generate Opener'; }
+    document.getElementById('regenBtn').dataset.id = id;
+    document.getElementById('regenBtn').disabled = false;
+    const acts = await get(`/api/prospects/${id}/activity`);
+    document.getElementById('pActivity').innerHTML = acts.length
+      ? acts.map(a=>`<div class="act-item"><div class="act-dot"></div><div class="act-body"><div class="act-event">${a.event}</div><div class="act-detail">${a.detail||''}</div></div><div class="act-time">${timeAgo(a.logged_at)}</div></div>`).join('')
+      : '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No activity recorded.</div>';
+  } catch(e) { console.error(e); }
+}
+
+function closePanel() {
+  selectedId = null;
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('panel').classList.remove('open');
+  document.querySelectorAll('tr[data-id]').forEach(r => r.classList.remove('selected'));
+}
+
+document.getElementById('panelClose').addEventListener('click', closePanel);
+document.getElementById('overlay').addEventListener('click', closePanel);
+
+// ── Panel tab switching ────────────────────────────────────────────────────────
+
+function switchPanelTab(tab) {
+  document.querySelectorAll('.panel-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'sequence' && selectedId) loadTouches(selectedId);
+  if (tab === 'meddic' && selectedId) loadMeddic(selectedId);
+}
+
+document.getElementById('panelTabs').addEventListener('click', e => {
+  const t = e.target.closest('.panel-tab'); if (!t) return;
+  switchPanelTab(t.dataset.tab);
+});
+
+// ── Regen opener ──────────────────────────────────────────────────────────────
+
+document.getElementById('regenBtn').addEventListener('click', async function() {
+  const id = this.dataset.id; if (!id) return;
+  this.disabled = true;
+  document.getElementById('regenLabel').textContent = 'Generating...';
+  this.querySelector('svg').style.animation = 'spin 0.6s linear infinite';
+  try {
+    const res = await post(`/api/prospects/${id}/generate-opener`, {});
+    const op = document.getElementById('pOpener');
+    op.textContent = res.opener; op.classList.remove('is-empty');
+    document.getElementById('regenLabel').textContent = 'Regenerate Opener';
+  } catch(e) { alert('Could not generate opener: ' + e.message); document.getElementById('regenLabel').textContent = 'Generate Opener'; }
+  finally { this.disabled = false; this.querySelector('svg').style.animation = ''; }
+});
+
+// ── Sequence touches ──────────────────────────────────────────────────────────
+
+async function loadTouches(id) {
+  document.getElementById('touchList').innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Loading...</div>';
+  try {
+    const touches = await get(`/api/prospects/${id}/touches`);
+    if (!touches.length) {
+      document.getElementById('touchList').innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:32px;">No touches scheduled. Click Enroll to create the sequence.</div>';
+      return;
+    }
+    document.getElementById('touchList').innerHTML = touches.map(t => {
+      const isEmail = t.touch_type === 'email';
+      const iconSvg = isEmail
+        ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>`;
+      const statusBadge = t.status === 'sent'
+        ? `<span class="badge b-sent">Sent</span>`
+        : `<span class="badge b-pending">Pending</span>`;
+      const sched = t.scheduled_at ? new Date(t.scheduled_at + 'Z').toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+      return `<div class="touch-item">
+        <div class="touch-day">D${t.touch_day}</div>
+        <div class="touch-icon ${isEmail ? 'email' : 'linkedin'}">${iconSvg}</div>
+        <div class="touch-body">
+          <div class="touch-subject">${t.subject||'—'}</div>
+          <div class="touch-date">${t.touch_type.replace('_',' ')} · ${sched}</div>
+        </div>
+        <div class="touch-status">${statusBadge}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+document.getElementById('enrollBtn').addEventListener('click', async () => {
+  if (!selectedId) return;
+  try {
+    const res = await post(`/api/prospects/${selectedId}/enroll`, {});
+    if (res.enrolled > 0) { await loadTouches(selectedId); loadStats(); }
+    else alert('Prospect is already enrolled in a sequence.');
+  } catch(e) { alert('Enrollment failed: ' + e.message); }
+});
+
+// ── MEDDIC ────────────────────────────────────────────────────────────────────
+
+async function loadMeddic(id) {
+  Object.keys(meddicState).forEach(k => { meddicState[k] = 0; });
+  try {
+    const m = await get(`/api/prospects/${id}/meddic`);
+    if (m && m.prospect_id) {
+      ['metrics_score','economic_buyer','decision_criteria','decision_process','identify_pain','champion'].forEach(k => {
+        meddicState[k] = m[k] || 0;
+      });
+      document.getElementById('meddicNotes').value = m.notes || '';
+      updateMeddicDisplay();
+    } else {
+      document.getElementById('meddicNotes').value = '';
+      updateMeddicDisplay();
+    }
+  } catch(e) { updateMeddicDisplay(); }
+}
+
+function meddicToggle(btn) {
+  const field = btn.dataset.field;
+  const val = parseInt(btn.dataset.val);
+  meddicState[field] = val;
+  updateMeddicDisplay();
+}
+
+function updateMeddicDisplay() {
+  // Update toggle buttons
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    const field = btn.dataset.field;
+    const val = parseInt(btn.dataset.val);
+    btn.classList.toggle('active', meddicState[field] === val);
+  });
+  // Update score
+  const total = Object.values(meddicState).reduce((a,b) => a+b, 0);
+  document.getElementById('meddicTotal').textContent = total;
+  const handoff = total >= 4;
+  document.getElementById('meddicHandoff').classList.toggle('hidden', !handoff);
+}
+
+async function saveMeddic() {
+  if (!selectedId) return;
+  const btn = document.getElementById('saveMeddicBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Saving...';
+  try {
+    const payload = { ...meddicState, notes: document.getElementById('meddicNotes').value };
+    const res = await post(`/api/prospects/${selectedId}/meddic`, payload);
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Saved';
+    setTimeout(() => { btn.disabled = false; btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Save MEDDIC Score'; }, 1800);
+    if (res.handoff_ready) loadTable();
+  } catch(e) { btn.disabled = false; btn.textContent = 'Save MEDDIC Score'; alert('Save failed: ' + e.message); }
+}
+
+// ── LinkedIn Queue ─────────────────────────────────────────────────────────────
+
+async function loadLinkedIn() {
+  document.getElementById('linkedinList').innerHTML = '<div class="li-empty"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>Loading...</p></div>';
+  try {
+    const items = await get('/api/linkedin/due');
+    const cnt = document.getElementById('liCount');
+    if (items.length > 0) { cnt.textContent = items.length; cnt.classList.remove('hidden'); }
+    else cnt.classList.add('hidden');
+
+    if (!items.length) {
+      document.getElementById('linkedinList').innerHTML = '<div class="li-empty"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><p>No LinkedIn touches pending — you are all caught up.</p></div>';
+      return;
+    }
+    document.getElementById('linkedinList').innerHTML = items.map(t => {
+      const init = (t.first_name||'?')[0].toUpperCase();
+      const typeLabel = t.touch_type === 'linkedin_connection' ? 'Connection Request' : 'LinkedIn DM';
+      const liUrl = t.linkedin_url ? `href="${t.linkedin_url}" target="_blank"` : '';
+      return `<div class="li-card">
+        <div class="li-avatar">${init}</div>
+        <div class="li-body">
+          <div class="li-name">${t.first_name||''} ${t.last_name||''}</div>
+          <div class="li-meta">${t.company_name||'—'} · Day ${t.touch_day} · <strong>${typeLabel}</strong></div>
+          <div class="li-copy">${(t.body||'').replace(/\{.*?\}/g,'…')}</div>
+          <div class="li-actions">
+            ${t.linkedin_url ? `<a class="btn btn-secondary" style="font-size:11px;padding:5px 10px;" ${liUrl}><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Open LinkedIn</a>` : ''}
+            <button class="btn btn-success" style="font-size:11px;padding:5px 10px;" onclick="markLiSent(${t.id}, this)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Mark Sent
+            </button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function markLiSent(touchId, btn) {
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try {
+    await post(`/api/linkedin/${touchId}/mark-sent`, {});
+    btn.closest('.li-card').style.opacity = '0.4';
+    setTimeout(() => { loadLinkedIn(); }, 800);
+  } catch(e) { btn.disabled = false; btn.textContent = 'Mark Sent'; }
+}
+
+// ── Analytics ─────────────────────────────────────────────────────────────────
+
+async function loadAnalytics() {
+  try {
+    const [e, ab] = await Promise.all([get('/api/stats/email'), get('/api/stats/ab')]);
+    document.getElementById('kpiSent').textContent = e.emails_sent;
+    document.getElementById('kpiOpenRate').textContent = e.open_rate_pct + '%';
+    document.getElementById('kpiOpened').textContent = `${e.emails_opened} opens tracked`;
+    document.getElementById('kpiReplyRate').textContent = e.reply_rate_pct + '%';
+    document.getElementById('kpiReplies').textContent = `${e.replies} total replies`;
+    document.getElementById('kpiPosRate').textContent = e.positive_reply_rate_pct + '%';
+    document.getElementById('kpiPos').textContent = `${e.positive_replies} positive replies`;
+    document.getElementById('kpiLi').textContent = e.linkedin_touches_sent;
+    document.getElementById('kpiCalls').textContent = e.positive_replies;
+
+    document.getElementById('abBody').innerHTML = ab.length
+      ? ab.map(r => {
+          const openPct = r.sent > 0 ? Math.round(r.opens/r.sent*100) : 0;
+          const replyPct = r.sent > 0 ? Math.round(r.replies/r.sent*100) : 0;
+          return `<tr>
+            <td><span class="badge b-persona" style="font-size:10px;">${r.persona}</span></td>
+            <td>Day ${r.touch_day}</td>
+            <td><span class="badge b-cool" style="font-size:10px;">Variant ${r.variant}</span></td>
+            <td>${r.sent}</td>
+            <td>${r.opens}</td>
+            <td>${r.replies}</td>
+            <td><div>${openPct}%</div><div class="rate-bar"><div class="rate-fill" style="width:${openPct}%;"></div></div></td>
+            <td><div>${replyPct}%</div><div class="rate-bar"><div class="rate-fill" style="background:var(--green);width:${replyPct}%;"></div></div></td>
+          </tr>`;
+        }).join('')
+      : `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted);">No sequence data yet. Send some emails first.</td></tr>`;
+  } catch(e) {}
+}
+
+// ── Activity feed ─────────────────────────────────────────────────────────────
+
+async function loadFeed() {
+  try {
+    const acts = await get('/api/activity?limit=30');
+    document.getElementById('feedList').innerHTML = acts.length
+      ? acts.map(a=>`<div class="feed-item"><div class="feed-name">${a.first_name||''} ${a.last_name||''}</div><div class="feed-event">${a.event}${a.detail?' — '+a.detail:''}</div><div class="feed-time">${timeAgo(a.logged_at)}</div></div>`).join('')
+      : `<div class="feed-empty"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.67 12 19.79 19.79 0 0 1 1.15 3.18 2 2 0 0 1 3.12 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z"/></svg>No activity yet</div>`;
+  } catch(e) {}
+}
+
+// ── Upload ─────────────────────────────────────────────────────────────────────
+
+const dropZone = document.getElementById('dropZone');
+const csvInput = document.getElementById('csvInput');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); if (e.dataTransfer.files[0]) handleUpload(e.dataTransfer.files[0]); });
+csvInput.addEventListener('change', () => { if (csvInput.files[0]) handleUpload(csvInput.files[0]); });
+
+async function handleUpload(file) {
+  if (!file.name.endsWith('.csv')) { alert('Please upload a CSV file.'); return; }
+  const form = new FormData(); form.append('file', file);
+  setStatus('running', `Processing ${file.name}...`);
+  document.getElementById('progWrap').classList.add('show');
+  document.getElementById('progFill').style.width = '4%';
+  document.getElementById('progMsg').textContent = 'Uploading...';
+  try { await post('/api/pipeline/upload-csv', form, false); pollStatus(); }
+  catch(e) { setStatus('ready', 'System Ready'); document.getElementById('progWrap').classList.remove('show'); alert('Upload failed: ' + e.message); }
+}
+
+function pollStatus() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const s = await get('/api/pipeline/status');
+      const pct = s.total > 0 ? Math.max(5, Math.round(s.processed/s.total*100)) : 10;
+      document.getElementById('progFill').style.width = pct + '%';
+      document.getElementById('progMsg').textContent = s.message;
+      if (!s.running) {
+        clearInterval(pollTimer); pollTimer = null;
+        setStatus('ready', 'System Ready');
+        setTimeout(() => { document.getElementById('progWrap').classList.remove('show'); document.getElementById('progFill').style.width='0%'; }, 2500);
+        loadStats(); loadTable(); loadFeed();
+      }
+    } catch(e) {}
+  }, 800);
+}
+
+// ── Manual triggers ────────────────────────────────────────────────────────────
+
+async function triggerSendTouches() {
+  setStatus('running', 'Sending touches...');
+  try {
+    const res = await post('/api/pipeline/send-touches', {});
+    setStatus('ready', `Sent ${res.emails_sent} emails`);
+    setTimeout(() => setStatus('ready', 'System Ready'), 3000);
+    loadStats(); loadFeed();
+  } catch(e) { setStatus('ready', 'System Ready'); }
+}
+
+async function triggerCheckReplies() {
+  setStatus('running', 'Checking replies...');
+  try {
+    const res = await post('/api/pipeline/check-replies', {});
+    setStatus('ready', `Checked ${res.checked} replies`);
+    setTimeout(() => setStatus('ready', 'System Ready'), 3000);
+    loadStats(); loadFeed();
+  } catch(e) { setStatus('ready', 'System Ready'); }
+}
+
+// ── Filters ────────────────────────────────────────────────────────────────────
+
+document.getElementById('tabBar').addEventListener('click', e => {
+  const t = e.target.closest('.tab'); if (!t) return;
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active'); activeTier = t.dataset.tier; loadTable();
+});
+
+let st;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(st); st = setTimeout(() => { searchQuery = e.target.value; loadTable(); }, 320);
+});
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function setStatus(state, text) {
+  document.getElementById('statusText').textContent = text;
+  document.getElementById('statusDot').className = 'status-dot' + (state === 'running' ? ' running' : '');
+}
+
+function timeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + (iso.endsWith('Z') ? '' : 'Z'));
+  const diff = Math.floor((Date.now() - d) / 1000);
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+
+loadStats(); loadTable(); loadFeed();
+setInterval(() => {
+  loadStats(); loadFeed();
+  if (!document.getElementById('panel').classList.contains('open')) loadTable();
+  if (activeView === 'analytics') loadAnalytics();
+}, 30000);
+</script>
+</body>
+</html>

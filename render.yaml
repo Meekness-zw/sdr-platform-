@@ -6,7 +6,7 @@ services:
     plan: free
     region: oregon
     buildCommand: CARGO_HOME=/tmp/.cargo pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: gunicorn webhooks.server:app -k uvicorn.workers.UvicornWorker
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9

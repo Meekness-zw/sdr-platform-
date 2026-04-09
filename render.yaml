@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: sdr-platform
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: CARGO_HOME=/tmp/.cargo pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.12
